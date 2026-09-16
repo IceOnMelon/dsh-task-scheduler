@@ -1,0 +1,20 @@
+# 依赖与构建产物
+node_modules/
+*.tgz
+
+# 自检的一次性输出（含本机绝对路径，不入库）
+tools/*-output.txt
+.verify-scratch/
+.verify-tmp/
+
+# 日志
+*.log
+
+# 内部文档与打样脚本：含本机绝对路径与内部协作过程记录，不随公开仓库发布
+# （它们仍留在本地源码目录里，只是不入公开仓库）
+/docs/spec.md
+/docs/api-contract.md
+/docs/verification-report.md
+/docs/m0-findings.md
+/docs/client-host-api.md
+/m0/

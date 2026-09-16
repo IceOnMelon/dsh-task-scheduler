@@ -1,0 +1,4 @@
+# dsh-task-scheduler bundle patch
+- insert:
+    - id: task-scheduler
+      name: 'dsh-task-scheduler'

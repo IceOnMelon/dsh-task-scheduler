@@ -1,0 +1,33 @@
+{
+  "name": "dsh-task-scheduler",
+  "version": "0.1.0",
+  "description": "DSH 定时任务插件：侧边栏任务面板，cron 定时在全新会话中执行 Prompt 或 shell 命令",
+  "keywords": ["dsh", "dsh-plugin", "deepseek-harness", "scheduler", "cron", "定时任务"],
+  "author": "IceOnMelon",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/IceOnMelon/dsh-task-scheduler.git"
+  },
+  "homepage": "https://github.com/IceOnMelon/dsh-task-scheduler#readme",
+  "bugs": { "url": "https://github.com/IceOnMelon/dsh-task-scheduler/issues" },
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": "./lib/index.js",
+    "./client": "./lib/client.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "bundle": { "patch": "./cordis.patch.yml" },
+    "client": {
+      "platform": "web",
+      "inject": [
+        "@deepseek-ai/dsh-client-ui-slots",
+        "@deepseek-ai/dsh-client-ui-workspace"
+      ]
+    }
+  },
+  "files": ["lib", "cordis.patch.yml", "docs/snippets"],
+  "license": "MIT"
+}
