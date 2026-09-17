@@ -66,11 +66,13 @@ for (const token of [
 console.log('\n=== [3] 交互态样式齐全（按钮/下拉的 hover、focus、禁用） ===')
 for (const rule of [
   '.dts-input,.dts-textarea{', '.dts-input:focus', '.dts-input:hover',
-  '.dts-radio input[type=checkbox]', '.dts-title-in{', '.dts-ta-lg{',
+  '.dts-radio input[type=checkbox]', '.dts-radio input[type=checkbox]:hover',
+  '.dts-radio input[type=checkbox]:checked', '.dts-title-in{', '.dts-ta-lg{',
+  '.dts-btn-primary{', '.dts-btn-primary:hover',
   '.dts-dd-btn{', '.dts-dd-btn:hover', '.dts-dd-btn.open', '.dts-dd-menu{', '.dts-dd-item:hover',
   '.dts-dd-item.on', '.dts-dd-text.empty', '.dts-dd-btn.open .dts-dd-caret',
   '.dts-meta-line{', '.dts-foot-actions{', '.dts-foot-meta{', '.dts-btn-danger{', '.dts-btn-danger:hover',
-  '.dts-dow.on', '.dts-swatch.on', '.dts-seg button.on',
+  '.dts-seg{', '.dts-seg button:hover', '.dts-dow.on', '.dts-swatch.on', '.dts-seg button.on',
 ]) {
   if (css.includes(rule)) pass += 1
   else { fail += 1; missing.push('缺规则 ' + rule) }

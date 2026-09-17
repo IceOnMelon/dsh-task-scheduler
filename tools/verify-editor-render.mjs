@@ -187,8 +187,12 @@ if (created !== null) {
   ok('频率下拉显示「每天」', ddTexts.indexOf('每天') >= 0, ddTexts.join('|'))
   ok('分类下拉显示「工作」', ddTexts.indexOf('工作') >= 0, ddTexts.join('|'))
   ok('没有出现「不自动运行」占位', ddTexts.indexOf('不自动运行（只能手动执行）') < 0, ddTexts.join('|'))
-  ok('有时间输入框且默认 09:00', created.nodes.some((n) => n.props.type === 'time' && n.props.value === '09:00'))
-  ok('显示人话说明', hasText(created, '每天 09:00 自动运行'))
+  ok('有时间输入框且默认 19:00', created.nodes.some((n) => n.props.type === 'time' && n.props.value === '19:00'))
+  ok('显示人话说明', hasText(created, '每天 19:00 自动运行'))
+  ok('保存是主按钮', byClass(created, 'dts-btn-primary').length === 1)
+  ok('自动批准显示开关状态', hasText(created, '自动批准工具调用（关）'))
+  ok('自动批准说明保留了 allowed-once / allow-always 细节',
+    hasText(created, 'allowed-once') && hasText(created, 'allow-always'))
   ok('底栏有「取消 / 保存 / 保存并立即执行」',
     hasText(created, '取消') && hasText(created, '保存') && hasText(created, '保存并立即执行'))
   ok('取消是红色实心按钮', byClass(created, 'dts-btn-danger').length === 1)
