@@ -52,17 +52,23 @@ console.log(`  检查 ${used.size} 个 class`)
 
 console.log('\n=== [2] 关键新控件必须有样式（防止整块样式塌掉） ===')
 for (const token of [
-  'dts-section', 'dts-section-title', 'dts-seg', 'dts-selectwrap', 'dts-dot', 'dts-swatches',
+  'dts-section', 'dts-section-title', 'dts-seg', 'dts-swatches',
   'dts-swatch', 'dts-color', 'dts-dows', 'dts-dow', 'dts-plain', 'dts-chips', 'dts-chip-next',
   'dts-adv', 'dts-adv-body', 'dts-cronhelp', 'dts-legend', 'dts-code', 'dts-perm', 'dts-perm-desc',
   'dts-inline', 'dts-inline-end', 'dts-row-between', 'dts-catpanel',
+  'dts-dd', 'dts-dd-btn', 'dts-dd-menu', 'dts-dd-item', 'dts-dd-dot', 'dts-dd-text', 'dts-dd-caret',
 ]) {
   if (used.has(token) && new RegExp('\\.' + token + '(?![\\w-])').test(css)) pass += 1
   else { fail += 1; missing.push(token + '（关键控件缺失或未被使用）') }
 }
 
 console.log('\n=== [3] 交互态样式齐全（按钮/下拉的 hover、focus、禁用） ===')
-for (const rule of ['.dts-select{', '.dts-input:focus', '.dts-dow.on', '.dts-swatch.on', '.dts-seg button.on', '.dts-perm label.on']) {
+for (const rule of [
+  '.dts-input,.dts-textarea{', '.dts-input:focus', '.dts-input:hover',
+  '.dts-dd-btn{', '.dts-dd-btn:hover', '.dts-dd-btn.open', '.dts-dd-menu{', '.dts-dd-item:hover',
+  '.dts-dd-item.on', '.dts-dd-text.empty', '.dts-dd-btn.open .dts-dd-caret',
+  '.dts-dow.on', '.dts-swatch.on', '.dts-seg button.on', '.dts-perm label.on',
+]) {
   if (css.includes(rule)) pass += 1
   else { fail += 1; missing.push('缺规则 ' + rule) }
 }
