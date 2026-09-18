@@ -314,7 +314,12 @@ console.log('\n[2] Prompt 型：全新会话 + cwd + 默认模型 + sessionId �
   check('不传 seed / inheritedEventCount', created.options.seed === undefined && created.options.inheritedEventCount === undefined)
   check('prompt 在 create resolve 之后投递', agents.order.indexOf('create') < agents.order.indexOf('followup'))
   const message = created.handle.agent.session.lastMessage
-  eq('首条用户消息 = 任务 prompt', message?.__userMessage?.content, [{ type: 'text', text: '汇总昨日工作' }])
+  const firstText = message?.__userMessage?.content?.[0]?.text ?? ''
+  check('首条用户消息带可辨认前缀（【任务】标题 · MM-DD HH:mm）',
+    /^【任务】日报 · \d{2}-\d{2} \d{2}:\d{2}\n\n汇总昨日工作$/.test(firstText), firstText)
+  eq('前缀之后就是任务 prompt 原文（一字不改）',
+    firstText.slice(firstText.indexOf('\n\n') + 2), '汇总昨日工作')
+  eq('消息只有一条 text 段', message?.__userMessage?.content?.length, 1)
   eq('消息来源标为 user', message?.__userMessage?.source, { kind: 'user' })
   eq('沙箱档位写入 workspace-write', platform.calls.find(call => call.fn === 'setSandboxMode')?.mode, 'workspace-write')
   eq('审批策略固定 ask（绝不 never）', platform.calls.find(call => call.fn === 'setApprovalPolicy')?.policy, APPROVAL_POLICY)

@@ -41,7 +41,9 @@ function loadComponents() {
   const capture = '\n    globalThis.__DTS_TEST__ = {'
     + ' TaskEditor: typeof TaskEditor === "function" ? TaskEditor : null,'
     + ' Select: typeof Select === "function" ? Select : null,'
-    + ' ScheduleField: typeof ScheduleField === "function" ? ScheduleField : null }'
+    + ' ScheduleField: typeof ScheduleField === "function" ? ScheduleField : null,'
+    + ' RunFeed: typeof RunFeed === "function" ? RunFeed : null,'
+    + ' buildFeed: typeof buildFeed === "function" ? buildFeed : null }'
   const ins = head.index + head[0].length
   body = body.slice(0, ins) + capture + body.slice(ins)
 
@@ -99,7 +101,10 @@ function loadComponents() {
 const components = loadComponents()
 const TaskEditor = components.TaskEditor
 const Select = components.Select
-if (typeof TaskEditor !== 'function' || typeof Select !== 'function') {
+const RunFeed = components.RunFeed
+const buildFeed = components.buildFeed
+if (typeof TaskEditor !== 'function' || typeof Select !== 'function'
+  || typeof RunFeed !== 'function' || typeof buildFeed !== 'function') {
   console.log('FAIL 未能取到组件（捕获点未命中或 apply 抛异常）')
   console.log('  拿到：' + JSON.stringify(Object.keys(components)))
   process.exit(1)
@@ -261,6 +266,81 @@ ok('有下拉箭头', byClass(dd, 'dts-dd-caret').length === 1)
 ok('收起态不渲染菜单', byClass(dd, 'dts-dd-menu').length === 0)
 const ddNone = tree(Select({ value: 'zzz', options: [{ value: 'a', label: '甲' }], onChange: NOOP }))
 ok('值不在选项里时用占位文案', textOf(byClass(ddNone, 'dts-dd-text')[0]) === '请选择')
+
+console.log('\n=== [9] 运行横幅：谁在跑 / 刚跑完 / 一键跳转 ===')
+const ago = (ms) => new Date(Date.now() - ms).toISOString()
+const feedTasks = [
+  Object.assign({}, EXISTING, {
+    id: 't_run_1', title: '正在跑的任务A', lastStatus: 'running', lastRunAt: ago(12000),
+    sessionIds: ['sess_a'], execKind: 'prompt',
+  }),
+  Object.assign({}, EXISTING, {
+    id: 't_run_2', title: '正在跑的任务B', lastStatus: 'running', lastRunAt: ago(4000),
+    sessionIds: ['sess_b'], execKind: 'prompt',
+  }),
+  Object.assign({}, EXISTING, {
+    id: 't_done_1', title: '刚跑完的任务', lastStatus: 'ok', lastRunAt: ago(60000),
+    sessionIds: ['sess_c'], execKind: 'prompt',
+  }),
+  Object.assign({}, EXISTING, {
+    id: 't_shell', title: '命令型任务', lastStatus: 'ok', lastRunAt: ago(90000),
+    sessionIds: [], execKind: 'shell',
+  }),
+]
+const feedRows = buildFeed(feedTasks, {}, {})
+ok('正在跑的在前、最近结束的在后', feedRows.map((r) => r.kind).join(',') === 'run,run,ok',
+  feedRows.map((r) => r.kind).join(','))
+ok('运行中按启动时间倒序（新的在前）且各带会话 id',
+  feedRows[0].sessionId === 'sess_b' && feedRows[1].sessionId === 'sess_a',
+  feedRows[0].sessionId + ',' + feedRows[1].sessionId)
+ok('最近结束的只保留 1 条（更早的 shell 那条不显示）', feedRows.filter((r) => r.kind !== 'run').length === 1)
+
+const manyRunning = []
+for (let i = 0; i < 5; i += 1) {
+  manyRunning.push(Object.assign({}, EXISTING, {
+    id: 't_m' + i, title: '并发' + i, lastStatus: 'running', lastRunAt: ago(1000 * (i + 1)),
+    sessionIds: ['s' + i], execKind: 'prompt',
+  }))
+}
+ok('并发超过 3 个时只列前 3 条（= 并发上限）',
+  buildFeed(manyRunning, {}, {}).filter((r) => r.kind === 'run').length === 3)
+
+const staleTask = Object.assign({}, EXISTING, {
+  id: 't_old', title: '两小时前跑完的', lastStatus: 'ok', lastRunAt: ago(2 * 60 * 60 * 1000),
+  sessionIds: ['sess_old'], execKind: 'prompt',
+})
+ok('很久以前结束的不进横幅（否则刷新后一直挂着一周前的记录）', buildFeed([staleTask], {}, {}).length === 0)
+ok('全是已结束时只剩 1 条', buildFeed([feedTasks[2]], {}, {}).length === 1)
+ok('命令型任务被标记为没有会话', buildFeed([feedTasks[3]], {}, {})[0].hasSession === false)
+ok('没有动态时返回空数组', buildFeed([], {}, {}).length === 0)
+
+const doneKey = feedRows[feedRows.length - 1].key
+const afterFirstDismiss = buildFeed(feedTasks, {}, Object.fromEntries([[doneKey, true]]))
+ok('关掉最新那条后，次新的顶上（一次关一条）',
+  afterFirstDismiss.filter((r) => r.kind !== 'run').length === 1
+    && afterFirstDismiss[afterFirstDismiss.length - 1].taskId === 't_shell',
+  afterFirstDismiss.map((r) => r.taskId).join(','))
+const shellDoneKey = afterFirstDismiss[afterFirstDismiss.length - 1].key
+const afterBothDismiss = buildFeed(feedTasks, {}, Object.fromEntries([[doneKey, true], [shellDoneKey, true]]))
+ok('已结束的行都关掉后就不再显示', afterBothDismiss.filter((r) => r.kind !== 'run').length === 0)
+ok('关掉已结束的行不影响运行中的', afterBothDismiss.filter((r) => r.kind === 'run').length === 2)
+
+const feedTree = tree(RunFeed({ tasks: feedTasks, activeRuns: {}, dismissed: {}, notify: NOOP, onDismiss: NOOP }))
+ok('渲染出 3 行', byClass(feedTree, 'dts-feed-row').length === 3)
+ok('渲染期无异常', feedTree.errors.length === 0, feedTree.errors.join(' | '))
+ok('每行都有「查看对话」', feedTree.texts.filter((t) => t === '查看对话').length === 3)
+ok('运行中的按钮可点', feedTree.nodes.filter((n) => n.type === 'button'
+  && n.props.className === 'dts-btn dts-btn-primary' && n.props.disabled !== true).length === 3)
+ok('running 行有呼吸点样式', byClass(feedTree, 'dts-feed-pulse').length === 2)
+ok('运行中显示「已跑」', feedTree.texts.some((t) => t.indexOf('已跑') >= 0))
+ok('结束行显示状态', feedTree.texts.some((t) => t.indexOf('成功') >= 0))
+ok('只有已结束的行有 × 关闭', feedTree.texts.filter((t) => t === '×').length === 1)
+
+const shellTree = tree(RunFeed({ tasks: [feedTasks[3]], activeRuns: {}, dismissed: {}, notify: NOOP, onDismiss: NOOP }))
+ok('命令型那行按钮置灰', shellTree.nodes.some((n) => n.type === 'button'
+  && n.props.className === 'dts-btn dts-btn-primary' && n.props.disabled === true))
+ok('命令型那行说明没有对话窗口', shellTree.texts.some((t) => t.indexOf('没有对话窗口') >= 0))
+ok('没有动态时整块不渲染', RunFeed({ tasks: [], activeRuns: {}, dismissed: {}, notify: NOOP, onDismiss: NOOP }) === null)
 
 console.log(`\n结果：${pass} passed, ${fail} failed`)
 if (fail > 0) {

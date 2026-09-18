@@ -207,15 +207,15 @@ const taskId = created.json?.value?.task?.id
 
 console.log('\n[2] 前端 lib/client.js 实际发出的请求形状能否被宿主接受（契约一致性，最关键）')
 
-// 前端 api.updateTask → POST /tasks/:id
+// 前端早已改用 spec §5 的规范方法：这里改为断言**旧别名确实已移除**（防止有人再加回来）。
+// 前端真正发出的 PATCH / DELETE 见下面两块，另有 tools/v2-client-pairing-check.mjs 逐条对照。
 {
   const r = await call('POST', `/tasks/${taskId}`, { title: '改名' })
-  ok('前端 updateTask 用的 POST /tasks/:id → 宿主接受（200）', r.status === 200 && r.json?.ok === true, `status=${r.status} body=${JSON.stringify(r.json).slice(0, 200)}`)
+  ok('旧别名 POST /tasks/:id 已移除（宿主不再接受）', r.status !== 200 || r.json?.ok !== true, `status=${r.status} body=${JSON.stringify(r.json).slice(0, 200)}`)
 }
-// 前端 api.deleteTask → POST /tasks/:id/delete
 {
   const r = await call('POST', `/tasks/${taskId}/delete`, {})
-  ok('前端 deleteTask 用的 POST /tasks/:id/delete → 宿主接受（200）', r.status === 200 && r.json?.ok === true, `status=${r.status} body=${JSON.stringify(r.json).slice(0, 200)}`)
+  ok('旧别名 POST /tasks/:id/delete 已移除（宿主不再接受）', r.status !== 200 || r.json?.ok !== true, `status=${r.status} body=${JSON.stringify(r.json).slice(0, 200)}`)
 }
 // spec §5 的规范方法（PATCH / DELETE）
 {
