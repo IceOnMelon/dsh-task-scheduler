@@ -487,7 +487,10 @@ eq('响应体只写冻结码', JSON.parse(thrownRes.payload).error.code, 'storag
 
 // 信任清单真源（§11.4/§11.5.2）
 const runtimeCtx = { get: (n) => (n === 'webRuntime' ? { trustedHosts: ['100.64.0.1:3080', 'lan.example'] } : undefined) }
-eq('trustedHostsOf 从 webRuntime 取', trustedHostsOf(runtimeCtx), ['100.64.0.1:3080', 'lan.example'])
+eq('trustedHostsOf 从 webRuntime 取（DSH 0.1.x）', trustedHostsOf(runtimeCtx), ['100.64.0.1:3080', 'lan.example'])
+const startupCtx = { get: (n) => (n === 'webStartup' ? { trustedHosts: ['100.64.0.1:3080'] } : undefined) }
+eq('trustedHostsOf 从 webStartup 取（DSH 0.2.x）', trustedHostsOf(startupCtx), ['100.64.0.1:3080'])
+eq('webStartup + webRuntime 并存时合并去重', trustedHostsOf({ get: (n) => (n === 'webStartup' ? { trustedHosts: ['a:1'] } : n === 'webRuntime' ? { trustedHosts: ['a:1', 'b:2'] } : undefined) }), ['a:1', 'b:2'])
 eq('trustedHostsOf 合并 config 去重', trustedHostsOf(runtimeCtx, ['lan.example', 'extra:1']), ['lan.example', 'extra:1', '100.64.0.1:3080'])
 eq('无 webRuntime 时为空', trustedHostsOf({ get: () => undefined }, []), [])
 check('webRuntime 的 host 可通过栅栏', isTrustedApiRequest({ headers: { host: '100.64.0.1:3080' } }, trustedHostsOf(runtimeCtx)))
@@ -560,7 +563,8 @@ writeFileSync(join(root, TASKS_FILE_NAME), '[]', 'utf8')
 console.log('\n[6] 插件入口、inject 与 $DSH_HOME 解析（spec §11.4）')
 const plugin = await import('../lib/index.js')
 eq('插件名', plugin.name, 'dsh-task-scheduler')
-eq('inject 含 webServer/sessions/agents/webRuntime', plugin.inject, ['webServer', 'sessions', 'agents', 'webRuntime'])
+eq('inject 恰为 webServer/sessions/agents', plugin.inject, ['webServer', 'sessions', 'agents'])
+check('inject 不含 webRuntime（0.2.x 起不再挂载，声明会让插件永久 pending）', !plugin.inject.includes('webRuntime'))
 check('默认导出为 { apply } 形态', typeof plugin.default.apply === 'function' && plugin.default.name === plugin.name)
 
 /** cordis 风格上下文桩（ctx.effect 立即执行 callback 并保存释放函数）。 */
@@ -662,7 +666,7 @@ if (existsSync(contractPath)) {
   }
   check('文档登记了 queued 扩展', doc.includes("'queued'") && doc.includes('并发上限 3'))
   check('文档登记了 catchup 扩展', doc.includes("'catchup'"))
-  check('文档写明 inject 含 webRuntime', doc.includes('webRuntime'))
+  check('文档写明 trustedHosts 在 0.2.x 来自 webStartup', doc.includes('webStartup'))
   check('文档写明 403 固定信封', doc.includes('forbidden') && doc.includes("code:'forbidden', message:'forbidden'"))
   check('文档声明验证结果与工具路径', /passed, 0 failed/.test(doc) && doc.includes('tools/verify.mjs'))
   check('文档含验证复现命令', doc.includes('node tools/verify.mjs') && doc.includes('node --check'))

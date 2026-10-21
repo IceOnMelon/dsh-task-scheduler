@@ -624,7 +624,8 @@ console.log('\n[7] 端到端接线：cron 预览 / 立即执行 / 暂停 / 孤�
   check('任务定义允许原样保存（spec §4）', tasksText.includes('SUPERSECRET42'))
 
   eq('插件导出形态', [plugin.name, plugin.default.name], ['dsh-task-scheduler', 'dsh-task-scheduler'])
-  eq('inject 含 webServer/sessions/agents/webRuntime', plugin.inject, ['webServer', 'sessions', 'agents', 'webRuntime'])
+  eq('inject 恰为 webServer/sessions/agents', plugin.inject, ['webServer', 'sessions', 'agents'])
+  check('inject 不含 webRuntime（0.2.x 起不再挂载）', !plugin.inject.includes('webRuntime'))
 
   // 卸载：停调度 + 泄放订阅（不留下定时器）
   for (const dispose of ctx.effects) {

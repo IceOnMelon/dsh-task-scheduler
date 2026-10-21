@@ -1,6 +1,6 @@
 {
   "name": "dsh-task-scheduler",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "DSH 定时任务插件：侧边栏任务面板，cron 定时在全新会话中执行 Prompt 或 shell 命令",
   "keywords": ["dsh", "dsh-plugin", "deepseek-harness", "scheduler", "cron", "定时任务"],
   "author": "IceOnMelon",
